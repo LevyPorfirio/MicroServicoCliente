@@ -45,6 +45,13 @@ public class ClienteController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+     @GetMapping("/clientes/{id}")
+public ResponseEntity<Cliente> buscarPorId(@PathVariable String id) {
+    return clienteRepository.findById(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+}
+
     @GetMapping("/restaurantes")
     public ResponseEntity<List<Restaurante>> listarRestaurantesExternos() {
         String url = "https://restaurante-production-7756.up.railway.app/restaurante";
