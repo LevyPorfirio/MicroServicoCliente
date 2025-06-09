@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cliente - Interface</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    input, button, select { padding: 10px; margin: 8px 0; width: 100%; }
+    .section { display: none; margin-top: 20px; }
+    .card { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+    .menu button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .menu button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+  <h2>Cliente</h2>
+  <div class="menu">
+    <button onclick="mostrar('cadastro')">📝 Cadastrar</button>
+    <button onclick="mostrar('atualizar')">🔁 Atualizar</button>
+    <button onclick="mostrar('deletar')">❌ Deletar</button>
+    <button onclick="mostrar('listarClientes')">📋 Listar Clientes</button>
+    <button onclick="mostrar('restaurantes')">🍽️ Restaurantes</button>
+  </div>
+
+  <div id="cadastro" class="section">
+    <h3>📝 Cadastrar Novo Cliente</h3>
+    <form id="cadastroForm">
+      <input type="text" id="cadNome" placeholder="Nome" required />
+      <input type="email" id="cadEmail" placeholder="Email" required />
+      <input type="text" id="cadTelefone" placeholder="Telefone" required />
+      <input type="text" id="cadEndereco" placeholder="Endereço" required />
+      <button type="submit">Cadastrar</button>
+    </form>
+    <div id="cadastroMensagem"></div>
+  </div>
+
+  <div id="atualizar" class="section">
+    <h3>🔁 Atualizar Cadastro</h3>
+    <form id="updateForm">
+      <input type="text" id="id" placeholder="ID do Cliente" required />
+      <input type="text" id="nome" placeholder="Nome" required />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="text" id="telefone" placeholder="Telefone" required />
+      <input type="text" id="endereco" placeholder="Endereço" required />
+      <button type="submit">Atualizar Cadastro</button>
+    </form>
+    <div id="updateMensagem"></div>
+  </div>
+
+  <div id="deletar" class="section">
+    <h3>❌ Deletar Cliente</h3>
+    <input type="text" id="idDeletar" placeholder="ID do Cliente para Deletar" />
+    <button onclick="deletarCliente()">Deletar Cliente</button>
+    <div id="deleteMensagem"></div>
+  </div>
+
+  <div id="listarClientes" class="section">
+    <h3>📋 Clientes Cadastrados</h3>
+    <button onclick="listarClientes()">Listar Clientes</button>
+    <div id="clientes"></div>
+  </div>
+
+  <div id="restaurantes" class="section">
+    <h3>🍽️ Restaurantes Disponíveis</h3>
+    <button onclick="carregarRestaurantes()">Ver Restaurantes</button>
+    <div id="restaurantesLista"></div>
+  </div>
+
+  <script>
+    function mostrar(id) {
+      document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
+      document.getElementById(id).style.display = 'block';
+    }
+
+    const cadastroForm = document.getElementById('cadastroForm');
+    cadastroForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const cliente = {
+        nome: document.getElementById('cadNome').value,
+        email: document.getElementById('cadEmail').value,
+        telefone: document.getElementById('cadTelefone').value,
+        endereco: document.getElementById('cadEndereco').value
+      };
+      const msg = document.getElementById('cadastroMensagem');
+      try {
+        const res = await fetch('https://microservicocliente-production.up.railway.app/api/clientes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cliente)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          msg.innerHTML = `<p style="color:green">Cliente cadastrado! ID: ${data.id}</p>`;
+          cadastroForm.reset();
+        } else {
+          msg.innerHTML = `<p style="color:red">Erro ao cadastrar.</p>`;
+        }
+      } catch {
+        msg.innerHTML = `<p style="color:red">Erro de conexão.</p>`;
+      }
+    });
+
+    const updateForm = document.getElementById('updateForm');
+    updateForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const id = document.getElementById('id').value;
+      const cliente = {
+        nome: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        telefone: document.getElementById('telefone').value,
+        endereco: document.getElementById('endereco').value
+      };
+      const msg = document.getElementById('updateMensagem');
+      try {
+        const res = await fetch(`https://microservicocliente-production.up.railway.app/api/clientes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cliente)
+        });
+        msg.innerHTML = res.ok
+          ? `<p style="color:green">Cliente atualizado.</p>`
+          : `<p style="color:red">Erro. ID inválido?</p>`;
+      } catch {
+        msg.innerHTML = `<p style="color:red">Erro de conexão.</p>`;
+      }
+    });
+
+    async function deletarCliente() {
+      const id = document.getElementById('idDeletar').value;
+      const msg = document.getElementById('deleteMensagem');
+      if (!id) return msg.innerHTML = `<p style="color:red">Informe o ID.</p>`;
+      try {
+        const res = await fetch(`https://microservicocliente-production.up.railway.app/api/clientes/${id}`, {
+          method: 'DELETE'
+        });
+        msg.innerHTML = res.ok
+          ? `<p style="color:green">Cliente deletado.</p>`
+          : `<p style="color:red">Erro ao deletar.</p>`;
+      } catch {
+        msg.innerHTML = `<p style="color:red">Erro de conexão.</p>`;
+      }
+    }
+
+    async function listarClientes() {
+      const div = document.getElementById('clientes');
+      div.innerHTML = 'Carregando...';
+      try {
+        const res = await fetch('https://microservicocliente-production.up.railway.app/api/clientes');
+        const data = await res.json();
+        div.innerHTML = '';
+        data.forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `<strong>ID:</strong> ${c.id}<br><strong>Nome:</strong> ${c.nome}<br>Email: ${c.email}<br>Telefone: ${c.telefone}<br>Endereço: ${c.endereco}`;
+          div.appendChild(card);
+        });
+      } catch {
+        div.innerHTML = '<p style="color:red">Erro ao buscar clientes.</p>';
+      }
+    }
+
+    async function carregarRestaurantes() {
+      const div = document.getElementById('restaurantesLista');
+      div.innerHTML = 'Carregando...';
+      try {
+        const res = await fetch('https://restaurante-production-7756.up.railway.app/restaurante');
+        const data = await res.json();
+        div.innerHTML = '';
+        data.forEach(r => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `<strong>${r.nome}</strong><br>CNPJ: ${r.cnpj}<br>Categoria: ${r.categoria}<br>Endereço: ${r.endereco}`;
+          div.appendChild(card);
+        });
+      } catch {
+        div.innerHTML = '<p style="color:red">Erro ao buscar restaurantes.</p>';
+      }
+    }
+  </script>
+</body>
+</html>
